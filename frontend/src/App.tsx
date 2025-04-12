@@ -1,9 +1,27 @@
-// src/App.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import FileUploader from './components/FileUploader';
 import ModList from './components/ModList';
 import Footer from './components/Footer';
 import Header from './components/Header';
+import ServerStatus from './components/ServerStatus';
+
+// Define the interface for queue status response
+interface QueueStatus {
+  queue_size: number;
+  current_task: string | null;
+  queued_tasks: string[];
+}
+
+// Define the interface for task status response
+interface TaskStatus {
+  task_id: string;
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  original_filename: string;
+  created_at: string;
+  download_url?: string;
+  error?: string;
+  completed_at?: string;
+}
 
 export interface ModFile {
   id: string;
@@ -11,6 +29,7 @@ export interface ModFile {
   status: 'queued' | 'converting' | 'completed' | 'error';
   downloadUrl?: string;
   errorMessage?: string;
+  taskId?: string; // New field to track the server-side task ID
 }
 
 function App() {
@@ -18,6 +37,65 @@ function App() {
   const [isConverting, setIsConverting] = useState(false);
   const [currentlyConverting, setCurrentlyConverting] = useState<string | null>(null);
   const [isBatchProcessing, setIsBatchProcessing] = useState(false);
+  const [serverStatus, setServerStatus] = useState<QueueStatus | null>(null);
+
+  // Fetch server status every 30 seconds
+  useEffect(() => {
+    const fetchServerStatus = async () => {
+      try {
+        // const response = await fetch('https://dt.meikoneko.space/queue-status');
+        const response = await fetch('http://localhost:8000/queue-status');
+        if (response.ok) {
+          const data: QueueStatus = await response.json();
+          setServerStatus(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch server status:', error);
+      }
+    };
+
+    // Fetch immediately on mount
+    fetchServerStatus();
+
+    // Then set up the interval
+    const intervalId = setInterval(fetchServerStatus, 30000); // 30 seconds
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Poll for task status updates
+  const pollTaskStatus = useCallback(async (taskId: string, modId: string) => {
+    try {
+      // const response = await fetch(`https://dt.meikoneko.space/task/${taskId}`);
+      const response = await fetch(`http://localhost:8000/task/${taskId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch task status');
+      }
+      
+      const taskData: TaskStatus = await response.json();
+      
+      // Update the mod status based on task status
+      if (taskData.status === 'processing') {
+        updateModStatus(modId, 'converting');
+      } else if (taskData.status === 'completed' && taskData.download_url) {
+        updateModStatus(modId, 'completed', taskData.download_url);
+        // Stop polling once completed
+        return true;
+      } else if (taskData.status === 'failed') {
+        updateModStatus(modId, 'error', undefined, taskData.error || 'Conversion failed');
+        // Stop polling once failed
+        return true;
+      }
+      
+      // Continue polling if not completed or failed
+      return false;
+    } catch (error) {
+      console.error('Error polling task status:', error);
+      // Continue polling on error
+      return false;
+    }
+  }, []);
 
   // Process queue when we're in batch processing mode
   useEffect(() => {
@@ -39,11 +117,11 @@ function App() {
     processNextInQueue();
   }, [isBatchProcessing, isConverting, modFiles]);
 
-  const convertFile = async (file: File): Promise<string> => {
+  const submitFile = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
-
-    const response = await fetch('https://dt.meikoneko.space/convert', {
+//const response = await fetch('http://localhost:8000/convert', {
+     const response = await fetch('https://dt.meikoneko.space/convert', {
       method: 'POST',
       body: formData,
     });
@@ -54,7 +132,7 @@ function App() {
     }
 
     const data = await response.json();
-    return data.converted_file;
+    return data.task_id;
   };
 
   const handleFilesAdded = (files: File[]) => {
@@ -101,8 +179,26 @@ function App() {
     updateModStatus(id, 'converting');
     
     try {
-      const downloadUrl = await convertFile(mod.file);
-      updateModStatus(id, 'completed', downloadUrl);
+      // Submit the file and get a task ID
+      const taskId = await submitFile(mod.file);
+      
+      // Update the mod with the task ID
+      setModFiles(prev => 
+        prev.map(m => 
+          m.id === id ? { ...m, taskId } : m
+        )
+      );
+      
+      // Set up polling for this task
+      const pollInterval = setInterval(async () => {
+        const isDone = await pollTaskStatus(taskId, id);
+        if (isDone) {
+          clearInterval(pollInterval);
+          setIsConverting(false);
+          setCurrentlyConverting(null);
+        }
+      }, 3000); // Poll every 3 seconds
+      
     } catch (error) {
       updateModStatus(
         id, 
@@ -110,7 +206,6 @@ function App() {
         undefined, 
         error instanceof Error ? error.message : 'Conversion failed'
       );
-    } finally {
       setIsConverting(false);
       setCurrentlyConverting(null);
     }
@@ -194,7 +289,7 @@ function App() {
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1-1v-4z" />
                     </svg>
                   </button>
                 )}
@@ -254,6 +349,9 @@ function App() {
                 <span className="text-indigo-300">Processing queue... {stats.queued} mods remaining</span>
               </div>
             )}
+            
+            {/* Server Status Component */}
+            <ServerStatus serverStatus={serverStatus} />
           </div>
         </div>
         

@@ -48,6 +48,7 @@ const ModList = ({ mods, onRemove, onConvert, isConverting, currentlyConverting 
                 </p>
                 <p className="text-sm text-gray-400">
                   {(mod.file.size / 1024).toFixed(0)} KB
+                  {mod.taskId && <span className="ml-2 text-indigo-300">Task: {mod.taskId.substring(0, 8)}...</span>}
                 </p>
               </div>
               
