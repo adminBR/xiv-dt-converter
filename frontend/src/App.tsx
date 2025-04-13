@@ -37,14 +37,14 @@ function App() {
   const [isConverting, setIsConverting] = useState(false);
   const [currentlyConverting, setCurrentlyConverting] = useState<string | null>(null);
   const [isBatchProcessing, setIsBatchProcessing] = useState(false);
-  const [serverStatus, setServerStatus] = useState<QueueStatus | null>(null);
+  const [serverStatus, setServerStatus] = useState<QueueStatus|null>(null);
 
   // Fetch server status every 30 seconds
   useEffect(() => {
     const fetchServerStatus = async () => {
       try {
-        // const response = await fetch('https://dt.meikoneko.space/queue-status');
-        const response = await fetch('http://localhost:8000/queue-status');
+        const response = await fetch('https://dtapi.meikoneko.space/queue-status');
+        //const response = await fetch('http://localhost:8000/queue-status');
         if (response.ok) {
           const data: QueueStatus = await response.json();
           setServerStatus(data);
@@ -66,8 +66,8 @@ function App() {
   // Poll for task status updates
   const pollTaskStatus = useCallback(async (taskId: string, modId: string) => {
     try {
-      // const response = await fetch(`https://dt.meikoneko.space/task/${taskId}`);
-      const response = await fetch(`http://localhost:8000/task/${taskId}`);
+      const response = await fetch(`https://dtapi.meikoneko.space/task/${taskId}`);
+      //const response = await fetch(`http://localhost:8000/task/${taskId}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch task status');
@@ -120,8 +120,9 @@ function App() {
   const submitFile = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
-//const response = await fetch('http://localhost:8000/convert', {
-     const response = await fetch('https://dt.meikoneko.space/convert', {
+
+    const response = await fetch('https://dtapi.meikoneko.space/convert', {
+    //const response = await fetch('http://localhost:8000/convert', {
       method: 'POST',
       body: formData,
     });
@@ -351,7 +352,16 @@ function App() {
             )}
             
             {/* Server Status Component */}
-            <ServerStatus serverStatus={serverStatus} />
+            {serverStatus ? (
+              <ServerStatus serverStatus={serverStatus} />
+            ) : (
+              <div className="flex justify-center items-center h-20">
+                <svg className="animate-spin h-6 w-6 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+              </div>
+            )}
           </div>
         </div>
         

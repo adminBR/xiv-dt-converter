@@ -3,8 +3,8 @@ FROM node:20 AS build
 
 WORKDIR /app
 
-# Copy package.json and yarn.lock to the container
-COPY package.json yarn.lock ./
+# Copy package.json and package-lock.lock to the container
+COPY package.json package-lock.json ./
 
 # Install dependencies
 RUN npm install
