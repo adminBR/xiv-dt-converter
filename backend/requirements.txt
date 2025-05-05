@@ -1,0 +1,7 @@
+django
+uvicorn
+djangorestframework
+whitenoise
+django-cors-headers
+celery
+aiofiles
