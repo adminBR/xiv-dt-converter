@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import FileUploader from './components/FileUploader';
 import ModList from './components/ModList';
 import Footer from './components/Footer';
@@ -15,7 +16,7 @@ interface QueueStatus {
 // Define the interface for task status response
 interface TaskStatus {
   task_id: string;
-  status: 'queued' | 'processing' | 'completed' | 'failed';
+  status: 'queued' | 'processing' | 'completed' | 'failed' | 'uploading';
   original_filename: string;
   created_at: string;
   download_url?: string;
@@ -26,10 +27,11 @@ interface TaskStatus {
 export interface ModFile {
   id: string;
   file: File;
-  status: 'queued' | 'converting' | 'completed' | 'error';
+  status: 'queued' | 'converting' | 'completed' | 'error' | 'uploading';
+  uploadProgress?: number; // NEW: upload progress (0–100)
   downloadUrl?: string;
   errorMessage?: string;
-  taskId?: string; // New field to track the server-side task ID
+  taskId?: string;
 }
 
 function App() {
@@ -37,13 +39,13 @@ function App() {
   const [isConverting, setIsConverting] = useState(false);
   const [currentlyConverting, setCurrentlyConverting] = useState<string | null>(null);
   const [isBatchProcessing, setIsBatchProcessing] = useState(false);
-  const [serverStatus, setServerStatus] = useState<QueueStatus|null>(null);
+  const [serverStatus, setServerStatus] = useState<QueueStatus | null>(null);
 
   // Fetch server status every 30 seconds
   useEffect(() => {
     const fetchServerStatus = async () => {
       try {
-        const response = await fetch('https://dtapi.meikoneko.space/queue-status');
+        const response = await fetch('https://dtapi.meikoneko.space/queue-status/');
         //const response = await fetch('http://localhost:8000/queue-status');
         if (response.ok) {
           const data: QueueStatus = await response.json();
@@ -68,13 +70,13 @@ function App() {
     try {
       const response = await fetch(`https://dtapi.meikoneko.space/task/${taskId}`);
       //const response = await fetch(`http://localhost:8000/task/${taskId}`);
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch task status');
       }
-      
+
       const taskData: TaskStatus = await response.json();
-      
+
       // Update the mod status based on task status
       if (taskData.status === 'processing') {
         updateModStatus(modId, 'converting');
@@ -87,7 +89,7 @@ function App() {
         // Stop polling once failed
         return true;
       }
-      
+
       // Continue polling if not completed or failed
       return false;
     } catch (error) {
@@ -101,7 +103,7 @@ function App() {
   useEffect(() => {
     const processNextInQueue = async () => {
       if (!isBatchProcessing || isConverting) return;
-      
+
       // Find next queued mod
       const nextQueuedMod = modFiles.find(mod => mod.status === 'queued');
       if (!nextQueuedMod) {
@@ -109,32 +111,85 @@ function App() {
         setIsBatchProcessing(false);
         return;
       }
-      
+
       // Start converting the next mod
       await convertSingleMod(nextQueuedMod.id);
     };
-    
+
     processNextInQueue();
   }, [isBatchProcessing, isConverting, modFiles]);
 
-  const submitFile = async (file: File): Promise<string> => {
+  const submitFile = async (file: File, onUploadProgress?: (progress: number) => void): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch('https://dtapi.meikoneko.space/convert', {
-    //const response = await fetch('http://localhost:8000/convert', {
-      method: 'POST',
-      body: formData,
-    });
+    try {
+      console.log(`Starting upload of ${file.name} (${formatFileSize(file.size)})`);
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to convert file');
+      // Create custom axios instance with increased timeout
+      const instance = axios.create({
+        timeout: 3600000, // 1 hour timeout
+      });
+
+      // Add request interceptor for debugging
+      instance.interceptors.request.use(request => {
+        console.log('Starting request', request.url);
+        return request;
+      });
+
+      // Add response interceptor for debugging
+      instance.interceptors.response.use(
+        response => {
+          console.log('Response received', response.status);
+          return response;
+        },
+        error => {
+          console.error('Request failed', error.message);
+          if (error.response) {
+            console.error('Response data:', error.response.data);
+            console.error('Response status:', error.response.status);
+          } else if (error.request) {
+            console.error('No response received');
+          }
+          return Promise.reject(error);
+        }
+      );
+
+      const response = await instance.post('https://dtapi.meikoneko.space/convert', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            console.log(`Upload progress: ${percentCompleted}%`);
+            if (onUploadProgress) {
+              onUploadProgress(percentCompleted);
+            }
+          }
+        }
+      });
+
+      console.log('Upload completed successfully');
+      console.log('Response:', response.data);
+
+      return response.data.task_id;
+    } catch (error) {
+      console.error('Upload failed:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    return data.task_id;
   };
+
+  // Helper function to format file size
+  function formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
 
   const handleFilesAdded = (files: File[]) => {
     const newModFiles = files.map(file => ({
@@ -142,20 +197,21 @@ function App() {
       file,
       status: 'queued' as const
     }));
-    
+
     setModFiles(prev => [...prev, ...newModFiles]);
   };
 
   const updateModStatus = (
-    id: string, 
-    status: ModFile['status'], 
-    downloadUrl?: string, 
-    errorMessage?: string
+    id: string,
+    status: ModFile['status'],
+    downloadUrl?: string,
+    errorMessage?: string,
+    uploadProgress?: number
   ) => {
-    setModFiles(prev => 
-      prev.map(mod => 
-        mod.id === id 
-          ? { ...mod, status, downloadUrl, errorMessage } 
+    setModFiles(prev =>
+      prev.map(mod =>
+        mod.id === id
+          ? { ...mod, status, downloadUrl, errorMessage, uploadProgress }
           : mod
       )
     );
@@ -164,33 +220,40 @@ function App() {
   const removeMod = (id: string) => {
     // Don't allow removal of currently converting mod
     if (id === currentlyConverting) return;
-    
+
     setModFiles(prev => prev.filter(mod => mod.id !== id));
   };
 
   const convertSingleMod = async (id: string) => {
     if (isConverting) return;
-    
+
     const mod = modFiles.find(m => m.id === id);
     if (!mod || mod.status !== 'queued') return;
-    
+
     setIsConverting(true);
     setCurrentlyConverting(id);
-    
-    updateModStatus(id, 'converting');
-    
+
+    // NEW: Set uploading + reset progress to 0
+    updateModStatus(id, 'uploading', undefined, undefined, 0);
+
     try {
-      // Submit the file and get a task ID
-      const taskId = await submitFile(mod.file);
-      
-      // Update the mod with the task ID
-      setModFiles(prev => 
-        prev.map(m => 
+      const taskId = await submitFile(mod.file, (progress) => {
+        // NEW: Update progress
+        setModFiles(prev =>
+          prev.map(m =>
+            m.id === id ? { ...m, uploadProgress: progress } : m
+          )
+        );
+      });
+
+      updateModStatus(id, 'converting');
+
+      setModFiles(prev =>
+        prev.map(m =>
           m.id === id ? { ...m, taskId } : m
         )
       );
-      
-      // Set up polling for this task
+
       const pollInterval = setInterval(async () => {
         const isDone = await pollTaskStatus(taskId, id);
         if (isDone) {
@@ -198,13 +261,13 @@ function App() {
           setIsConverting(false);
           setCurrentlyConverting(null);
         }
-      }, 3000); // Poll every 3 seconds
-      
+      }, 3000);
+
     } catch (error) {
       updateModStatus(
-        id, 
-        'error', 
-        undefined, 
+        id,
+        'error',
+        undefined,
         error instanceof Error ? error.message : 'Conversion failed'
       );
       setIsConverting(false);
@@ -212,9 +275,10 @@ function App() {
     }
   };
 
+
   const startBatchConversion = () => {
     if (isConverting) return;
-    
+
     const hasQueuedFiles = modFiles.some(mod => mod.status === 'queued');
     if (hasQueuedFiles) {
       setIsBatchProcessing(true);
@@ -223,12 +287,12 @@ function App() {
 
   const cancelConversion = () => {
     if (!isConverting && !isBatchProcessing) return;
-    
+
     // If a file is currently converting, mark it as queued again
     if (currentlyConverting) {
       updateModStatus(currentlyConverting, 'queued');
     }
-    
+
     setIsConverting(false);
     setIsBatchProcessing(false);
     setCurrentlyConverting(null);
@@ -243,8 +307,9 @@ function App() {
     const completed = modFiles.filter(mod => mod.status === 'completed').length;
     const failed = modFiles.filter(mod => mod.status === 'error').length;
     const converting = modFiles.filter(mod => mod.status === 'converting').length;
-    
-    return { queued, completed, failed, converting };
+    const uploading = modFiles.filter(mod => mod.status === 'uploading').length;
+
+    return { queued, completed, failed, converting, uploading };
   };
 
   const stats = getQueueStats();
@@ -252,15 +317,15 @@ function App() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-900 text-white">
       <Header />
-      
+
       <main className="flex-grow flex flex-col md:flex-row py-6 px-4 md:px-8 gap-6">
         <div className="w-full md:w-1/2 flex flex-col">
           <FileUploader onFilesSelected={handleFilesAdded} />
-          
+
           <div className="mt-6 p-4 bg-gray-800 bg-opacity-50 rounded-lg">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium text-purple-300">Conversion Controls</h3>
-              
+
               <div className="flex space-x-3">
                 {/* Convert All Button */}
                 <button
@@ -270,7 +335,7 @@ function App() {
                   className={`
                     p-2 rounded-full w-10 h-10 flex items-center justify-center
                     ${isConverting || !stats.queued
-                      ? 'bg-gray-700 text-gray-500 cursor-not-allowed' 
+                      ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                       : 'bg-indigo-600 hover:bg-indigo-700 text-white transition-colors'
                     }
                   `}
@@ -280,7 +345,7 @@ function App() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </button>
-                
+
                 {/* Cancel Button */}
                 {(isConverting || isBatchProcessing) && (
                   <button
@@ -294,7 +359,7 @@ function App() {
                     </svg>
                   </button>
                 )}
-                
+
                 {/* Clear Completed Button */}
                 {stats.completed > 0 && (
                   <button
@@ -309,7 +374,7 @@ function App() {
                 )}
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="bg-gray-700 p-3 rounded-lg">
                 <div className="flex items-center space-x-2">
@@ -318,7 +383,7 @@ function App() {
                 </div>
                 <p className="text-xs text-gray-400 mt-1">Queued</p>
               </div>
-              
+
               <div className="bg-gray-700 p-3 rounded-lg">
                 <div className="flex items-center space-x-2">
                   <div className={`w-3 h-3 rounded-full ${isConverting ? 'bg-blue-500 animate-pulse' : 'bg-blue-500'}`}></div>
@@ -326,7 +391,7 @@ function App() {
                 </div>
                 <p className="text-xs text-gray-400 mt-1">Converting</p>
               </div>
-              
+
               <div className="bg-gray-700 p-3 rounded-lg">
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -334,7 +399,7 @@ function App() {
                 </div>
                 <p className="text-xs text-gray-400 mt-1">Completed</p>
               </div>
-              
+
               <div className="bg-gray-700 p-3 rounded-lg">
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-red-500 rounded-full"></div>
@@ -343,14 +408,14 @@ function App() {
                 <p className="text-xs text-gray-400 mt-1">Failed</p>
               </div>
             </div>
-            
+
             {isBatchProcessing && (
               <div className="mt-4 p-3 bg-indigo-900 bg-opacity-40 rounded-lg border border-indigo-700 flex items-center">
                 <div className="w-4 h-4 border-2 border-indigo-300 border-t-transparent rounded-full animate-spin mr-3"></div>
                 <span className="text-indigo-300">Processing queue... {stats.queued} mods remaining</span>
               </div>
             )}
-            
+
             {/* Server Status Component */}
             {serverStatus ? (
               <ServerStatus serverStatus={serverStatus} />
@@ -364,18 +429,18 @@ function App() {
             )}
           </div>
         </div>
-        
+
         <div className="w-full md:w-1/2">
-          <ModList 
-            mods={modFiles} 
-            onRemove={removeMod} 
+          <ModList
+            mods={modFiles}
+            onRemove={removeMod}
             onConvert={convertSingleMod}
             isConverting={isConverting}
             currentlyConverting={currentlyConverting}
           />
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );
