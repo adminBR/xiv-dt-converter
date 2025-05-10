@@ -5,3 +5,6 @@ whitenoise
 django-cors-headers
 celery
 aiofiles
+pyjwt
+psycopg2-binary
+bcrypt

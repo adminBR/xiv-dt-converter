@@ -25,8 +25,18 @@ SECRET_KEY = 'django-insecure-7zx6kr$3-6h5pizyu^fppfurz10bjk)8)=2x%t^*swx!2%w@%3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['dtapi.meikoneko.space','dl.meikoneko.space','100.81.45.50']
+ALLOWED_HOSTS = ['dtapi.meikoneko.space','dl.meikoneko.space','100.81.45.50','127.0.0.1']
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'xiv-dt-updater',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': '192.168.15.168',
+        'PORT': '5432',
+    }
+}
 
 # Application definition
 
@@ -133,7 +143,7 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
-        'app': {  # Add your app name here
+        'converter_app': {  # Add your app name here
             'handlers': ['file', 'console'],
             'level': 'INFO',
             'propagate': False,

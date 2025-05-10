@@ -5,6 +5,7 @@ import ModList from './components/ModList';
 import Footer from './components/Footer';
 import Header from './components/Header';
 import ServerStatus from './components/ServerStatus';
+import { AuthProvider, useAuth } from './components/AuthContext';
 
 // Define the interface for queue status response
 interface QueueStatus {
@@ -34,7 +35,8 @@ export interface ModFile {
   taskId?: string;
 }
 
-function App() {
+function AppContent() {
+  const { isAuthenticated, token } = useAuth();
   const [modFiles, setModFiles] = useState<ModFile[]>([]);
   const [isConverting, setIsConverting] = useState(false);
   const [currentlyConverting, setCurrentlyConverting] = useState<string | null>(null);
@@ -45,8 +47,8 @@ function App() {
   useEffect(() => {
     const fetchServerStatus = async () => {
       try {
-        const response = await fetch('https://dtapi.meikoneko.space/queue-status/');
-        //const response = await fetch('http://localhost:8000/queue-status');
+        //const response = await fetch('https://dtapi.meikoneko.space/queue-status/');
+        const response = await fetch(import.meta.env.VITE_API_URL + '/queue-status/');
         if (response.ok) {
           const data: QueueStatus = await response.json();
           setServerStatus(data);
@@ -68,8 +70,8 @@ function App() {
   // Poll for task status updates
   const pollTaskStatus = useCallback(async (taskId: string, modId: string) => {
     try {
-      const response = await fetch(`https://dtapi.meikoneko.space/task/${taskId}`);
-      //const response = await fetch(`http://localhost:8000/task/${taskId}`);
+      //const response = await fetch(`https://dtapi.meikoneko.space/task/${taskId}`);
+      const response = await fetch(import.meta.env.VITE_API_URL + `/task/${taskId}`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch task status');
@@ -119,25 +121,21 @@ function App() {
     processNextInQueue();
   }, [isBatchProcessing, isConverting, modFiles]);
 
-  const submitFile = async (file: File, onUploadProgress?: (progress: number) => void): Promise<string> => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const submitFile = async (file: File, onUploadProgress?: (progress: number) => void): Promise<any> => {
     const formData = new FormData();
     formData.append('file', file);
 
     try {
       console.log(`Starting upload of ${file.name} (${formatFileSize(file.size)})`);
 
-      // Create custom axios instance with increased timeout
-      const instance = axios.create({
-        timeout: 3600000, // 1 hour timeout
-      });
+      const instance = axios.create({ timeout: 3600000 });
 
-      // Add request interceptor for debugging
       instance.interceptors.request.use(request => {
         console.log('Starting request', request.url);
         return request;
       });
 
-      // Add response interceptor for debugging
       instance.interceptors.response.use(
         response => {
           console.log('Response received', response.status);
@@ -155,9 +153,10 @@ function App() {
         }
       );
 
-      const response = await instance.post('https://dtapi.meikoneko.space/convert', formData, {
+      const response = await instance.post(import.meta.env.VITE_API_URL + '/convert', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          ...(isAuthenticated && token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total) {
@@ -173,7 +172,8 @@ function App() {
       console.log('Upload completed successfully');
       console.log('Response:', response.data);
 
-      return response.data.task_id;
+      // Return full response data instead of just task_id
+      return response.data;
     } catch (error) {
       console.error('Upload failed:', error);
       throw error;
@@ -233,12 +233,10 @@ function App() {
     setIsConverting(true);
     setCurrentlyConverting(id);
 
-    // NEW: Set uploading + reset progress to 0
     updateModStatus(id, 'uploading', undefined, undefined, 0);
 
     try {
-      const taskId = await submitFile(mod.file, (progress) => {
-        // NEW: Update progress
+      const responseData = await submitFile(mod.file, (progress) => {
         setModFiles(prev =>
           prev.map(m =>
             m.id === id ? { ...m, uploadProgress: progress } : m
@@ -246,16 +244,18 @@ function App() {
         );
       });
 
-      updateModStatus(id, 'converting');
+      const { task_id, ...otherData } = responseData;
+
+      updateModStatus(id, 'converting', otherData);
 
       setModFiles(prev =>
         prev.map(m =>
-          m.id === id ? { ...m, taskId } : m
+          m.id === id ? { ...m, taskId: task_id } : m
         )
       );
 
       const pollInterval = setInterval(async () => {
-        const isDone = await pollTaskStatus(taskId, id);
+        const isDone = await pollTaskStatus(task_id, id);
         if (isDone) {
           clearInterval(pollInterval);
           setIsConverting(false);
@@ -264,12 +264,23 @@ function App() {
       }, 3000);
 
     } catch (error) {
-      updateModStatus(
-        id,
-        'error',
-        undefined,
-        error instanceof Error ? error.message : 'Conversion failed'
-      );
+      let errorMessage = 'Conversion failed';
+
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          errorMessage = typeof error.response.data === 'string'
+            ? error.response.data
+            : JSON.stringify(error.response.data);
+        } else if (error.request) {
+          errorMessage = 'No response received from server';
+        } else {
+          errorMessage = error.message;
+        }
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      updateModStatus(id, 'error', undefined, JSON.parse(errorMessage).error);
       setIsConverting(false);
       setCurrentlyConverting(null);
     }
@@ -443,6 +454,15 @@ function App() {
 
       <Footer />
     </div>
+  );
+}
+
+// We wrap the entire app with AuthProvider to make authentication available throughout the app
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
