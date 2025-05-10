@@ -45,18 +45,7 @@ function AppContent() {
 
   // Fetch server status every 30 seconds
   useEffect(() => {
-    const fetchServerStatus = async () => {
-      try {
-        //const response = await fetch('https://dtapi.meikoneko.space/queue-status/');
-        const response = await fetch(import.meta.env.VITE_API_URL + '/queue-status/');
-        if (response.ok) {
-          const data: QueueStatus = await response.json();
-          setServerStatus(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch server status:', error);
-      }
-    };
+
 
     // Fetch immediately on mount
     fetchServerStatus();
@@ -66,6 +55,19 @@ function AppContent() {
 
     return () => clearInterval(intervalId);
   }, []);
+
+  const fetchServerStatus = async () => {
+    try {
+      //const response = await fetch('https://dtapi.meikoneko.space/queue-status/');
+      const response = await fetch(import.meta.env.VITE_API_URL + '/queue-status/');
+      if (response.ok) {
+        const data: QueueStatus = await response.json();
+        setServerStatus(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch server status:', error);
+    }
+  };
 
   // Poll for task status updates
   const pollTaskStatus = useCallback(async (taskId: string, modId: string) => {
@@ -245,9 +247,8 @@ function AppContent() {
       });
 
       const { task_id, ...otherData } = responseData;
-
       updateModStatus(id, 'converting', otherData);
-
+      fetchServerStatus();
       setModFiles(prev =>
         prev.map(m =>
           m.id === id ? { ...m, taskId: task_id } : m
