@@ -204,8 +204,8 @@ class TaskQueue:
                     os.makedirs(os.path.dirname(task.output_path), exist_ok=True)
                     
                     # Check if ConsoleTools.exe exists
-                    #tools_path = 'C:\\Program Files\\FFXIV TexTools\\FFXIV_TexTools\\ConsoleTools.exe'
-                    tools_path = 'C:\\Users\\Administrator\\Downloads\\FFXIV_TexTools_v3.0.9.5\\ConsoleTools.exe'
+                    tools_path = 'C:\\Program Files\\FFXIV TexTools\\FFXIV_TexTools\\ConsoleTools.exe'
+                    #tools_path = 'C:\\Users\\Administrator\\Downloads\\FFXIV_TexTools_v3.0.9.5\\ConsoleTools.exe'
 
                     if not os.path.exists(tools_path):
                         logging.error(f"ConsoleTools.exe not found at: {tools_path}")
@@ -221,8 +221,8 @@ class TaskQueue:
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
                         text=True,
-                        cwd=os.path.dirname(__file__),
-                        timeout=3600  # 1 hour timeout
+                        cwd=os.path.dirname(tools_path),  # CD into ConsoleTools.exe's folder
+                        timeout=3600
                     )
 
                     if result.returncode != 0:
@@ -389,7 +389,10 @@ class ConvertFileView(APIView):
                 logging.error(f"Error saving file: {str(e)}")
                 return Response({"error": f"File save error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            output_filename = f"dt_{original_filename}"
+            output_filename = f"dt_{original_filename}".lower()
+            #make sure the extension is ttmp2 even for older files
+            if(output_filename.endswith('ttmp')):
+                output_filename = output_filename.replace('ttmp','ttmp2')
             output_path = os.path.join(hash_dir, output_filename)
 
             # Create task
