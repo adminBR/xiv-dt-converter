@@ -64,7 +64,7 @@ DB_PASSWORD = 'postgres'
 # JWT settings
 JWT_SECRET = os.environ.get('JWT_SECRET', 'lmao1234')  # Better to use environment variable
 JWT_ALGORITHM = 'HS256'
-JWT_EXPIRATION_DELTA = timedelta(days=1)  # Token valid for 1 day
+JWT_EXPIRATION_DELTA = timedelta(days=90)  # Token valid for 1 day
 
 def get_db_connection():
     """Establish a connection to the PostgreSQL database"""
