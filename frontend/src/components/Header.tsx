@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 
 import AuthModal from "./User/AuthModel";
 import UserDrawer from "./User/UserDrawer";
+import LoginModal from "./User/LoginModal";
+import RegisterModal from "./User/RegisterModal";
 
 const Header = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -165,17 +167,15 @@ const Header = () => {
       </div>
 
       {/* Auth Modals */}
-      <AuthModal
+      <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
-        mode="login"
         onSuccess={handleAuthSuccess}
       />
 
-      <AuthModal
+      <RegisterModal
         isOpen={isRegisterModalOpen}
         onClose={() => setIsRegisterModalOpen(false)}
-        mode="register"
         onSuccess={handleAuthSuccess}
       />
 

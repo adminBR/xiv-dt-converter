@@ -2,14 +2,12 @@
 import { useState } from "react";
 import { AuthModalProps, FormErrors } from "../../interfaces/Auth";
 
-const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
+const LoginModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [generalError, setGeneralError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [modalMode, setModalMode] = useState<string>(mode);
 
   // Helper to render field errors
   const renderFieldError = (field: string) => {
@@ -38,21 +36,13 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
     clearErrors();
     setIsLoading(true);
 
-    // Additional validation for registration mode
-    if (modalMode === "register" && password !== confirmPassword) {
-      setErrors({ confirm_password: "Passwords do not match" });
-      setIsLoading(false);
-      return;
-    }
-
     try {
       const formData = new FormData();
       formData.append("user_name", username);
       formData.append("user_pass", password);
 
-      const endpoint = modalMode === "login" ? "/me/login/" : "/me/register/";
       const response = await fetch(
-        import.meta.env.VITE_API_URL + `${endpoint}`,
+        import.meta.env.VITE_API_URL + "/me/login/",
         {
           method: "POST",
           body: formData,
@@ -86,7 +76,6 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
       // Reset form and close modal
       setUsername("");
       setPassword("");
-      setConfirmPassword("");
       onClose();
     } catch {
       setGeneralError(
@@ -101,7 +90,6 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
   const resetForm = () => {
     setUsername("");
     setPassword("");
-    setConfirmPassword("");
     clearErrors();
   };
 
@@ -117,9 +105,7 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
       <div className="bg-gray-800 p-6 rounded-lg shadow-xl w-96 border border-purple-500">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-purple-300">
-            {modalMode === "login" ? "Login" : "Register"}
-          </h2>
+          <h2 className="text-xl font-bold text-purple-300">login</h2>
           <button
             onClick={handleClose}
             className="text-gray-400 hover:text-white"
@@ -203,39 +189,7 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
               required
             />
             {renderFieldError("user_pass")}
-            {modalMode === "register" && (
-              <p className="text-xs text-gray-400 mt-1">
-                Password must be at least 6 characters and contain both letters
-                and numbers.
-              </p>
-            )}
           </div>
-
-          {modalMode === "register" && (
-            <div className="mb-6">
-              <label
-                htmlFor="confirmPassword"
-                className="block text-gray-300 mb-1"
-              >
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className={`w-full px-3 py-2 bg-gray-700 border rounded focus:outline-none focus:ring-1 text-white
-                                    ${
-                                      errors.confirm_password
-                                        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                                        : "border-gray-600 focus:border-purple-500 focus:ring-purple-500"
-                                    }`}
-                aria-invalid={!!errors.confirm_password}
-                required
-              />
-              {renderFieldError("confirm_password")}
-            </div>
-          )}
 
           <button
             type="submit"
@@ -269,39 +223,23 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
                     d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                   ></path>
                 </svg>
-                {modalMode === "login" ? "Logging in..." : "Registering..."}
+                Logging in...
               </span>
             ) : (
-              <>{modalMode === "login" ? "Login" : "Register"}</>
+              <>login</>
             )}
           </button>
 
           <div className="mt-4 text-center text-gray-400 text-sm">
-            {modalMode === "login" ? (
-              <p>
-                Don't have an account?
-                <button
-                  className="text-blue-500 hover:underline ml-1"
-                  onClick={() => {
-                    setModalMode("register");
-                  }}
-                >
-                  Register
-                </button>
-              </p>
-            ) : (
-              <p>
-                Already have an account?
-                <button
-                  className="text-blue-500 hover:underline ml-1"
-                  onClick={() => {
-                    setModalMode("login");
-                  }}
-                >
-                  Login
-                </button>
-              </p>
-            )}
+            <p>
+              Don't have an account?
+              <button
+                className="text-blue-500 hover:underline ml-1"
+                onClick={() => {}}
+              >
+                Register
+              </button>
+            </p>
           </div>
         </form>
       </div>
@@ -309,4 +247,4 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
   );
 };
 
-export default AuthModal;
+export default LoginModal;

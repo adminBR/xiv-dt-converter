@@ -10,7 +10,6 @@ export interface AuthContextType {
 export interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  mode: "login" | "register";
   onSuccess: (token: string, username: string) => void;
 }
 
