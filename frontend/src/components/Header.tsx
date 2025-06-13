@@ -1,7 +1,6 @@
 // src/components/Header.tsx
 import { useState, useEffect } from "react";
 
-import AuthModal from "./User/AuthModel";
 import UserDrawer from "./User/UserDrawer";
 import LoginModal from "./User/LoginModal";
 import RegisterModal from "./User/RegisterModal";
@@ -65,15 +64,14 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-gray-800 py-6 px-8 border-b border-purple-700 shadow-lg">
+    <header className="bg-gray-900 py-4 px-8 position: sticky">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <div className="w-14 h-14 mr-4 relative">
-            <div className="absolute inset-0 bg-purple-500 rounded-full opacity-50 animate-pulse"></div>
-            <div className="absolute inset-1 bg-gray-800 rounded-full flex items-center justify-center">
+            <div className="absolute inset-1  rounded-full flex items-center justify-center">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-8 w-8 text-purple-300"
+                className="h-10 w-10 text-purple-300"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -89,7 +87,7 @@ const Header = () => {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-purple-300">
-              XIV DT Updater
+              XIV - update to DT
             </h1>
             <p className="text-gray-400 text-sm">Dont we all love dawntrail?</p>
           </div>
@@ -143,6 +141,10 @@ const Header = () => {
           ) : (
             <div className="flex flex-col items-end space-y-2">
               <div className="flex items-center space-x-2">
+                <p className="text-xs text-gray-400 max-w-xs text-right pr-4">
+                  Register an account to save your conversions for 30 days and
+                  redownload them anytime.
+                </p>
                 <button
                   onClick={() => setIsLoginModalOpen(true)}
                   className="px-4 py-2 bg-purple-800 hover:bg-purple-900 text-white rounded-lg transition-colors"
@@ -152,15 +154,11 @@ const Header = () => {
 
                 <button
                   onClick={() => setIsRegisterModalOpen(true)}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors border border-purple-800"
+                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
                 >
-                  Register
+                  Sign up
                 </button>
               </div>
-              <p className="text-xs text-gray-400 max-w-xs text-right">
-                Register an account to save your conversions for 30 days and
-                redownload them anytime.
-              </p>
             </div>
           )}
         </div>

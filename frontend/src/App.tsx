@@ -335,7 +335,7 @@ function AppContent() {
           <div className="mt-6 p-4 bg-gray-800 bg-opacity-50 rounded-lg">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium text-purple-300">
-                Conversion Controls
+                Conversion Status
               </h3>
 
               <div className="flex space-x-3">
@@ -345,7 +345,7 @@ function AppContent() {
                   disabled={isConverting || !stats.queued}
                   title="Convert all queued mods"
                   className={`
-                    p-2 rounded-full w-10 h-10 flex items-center justify-center
+                    p-2 rounded-full w-40 h-10 flex items-center justify-center
                     ${
                       isConverting || !stats.queued
                         ? "bg-gray-700 text-gray-500 cursor-not-allowed"
@@ -353,6 +353,15 @@ function AppContent() {
                     }
                   `}
                 >
+                  <p
+                    className={`text-lg pr-2 font-medium  ${
+                      isConverting || !stats.queued
+                        ? " text-gray-500 cursor-not-allowed"
+                        : " text-white transition-colors"
+                    }`}
+                  >
+                    Convert all
+                  </p>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5"
@@ -431,7 +440,7 @@ function AppContent() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div className="bg-gray-700 p-3 rounded-lg">
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
@@ -444,18 +453,13 @@ function AppContent() {
 
               <div className="bg-gray-700 p-3 rounded-lg">
                 <div className="flex items-center space-x-2">
-                  <div
-                    className={`w-3 h-3 rounded-full ${
-                      isConverting ? "bg-blue-500 animate-pulse" : "bg-blue-500"
-                    }`}
-                  ></div>
-                  <span className="text-xl font-bold text-blue-300">
-                    {stats.converting}
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <span className="text-xl font-bold text-red-300">
+                    {stats.failed}
                   </span>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Converting</p>
+                <p className="text-xs text-gray-400 mt-1">Failed</p>
               </div>
-
               <div className="bg-gray-700 p-3 rounded-lg">
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -464,16 +468,6 @@ function AppContent() {
                   </span>
                 </div>
                 <p className="text-xs text-gray-400 mt-1">Completed</p>
-              </div>
-
-              <div className="bg-gray-700 p-3 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className="text-xl font-bold text-red-300">
-                    {stats.failed}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-400 mt-1">Failed</p>
               </div>
             </div>
 
