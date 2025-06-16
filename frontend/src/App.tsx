@@ -419,8 +419,13 @@ function AppContent() {
                   <button
                     onClick={clearCompletedMods}
                     title="Clear completed mods"
-                    className="p-2 rounded-full w-10 h-10 bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center transition-colors"
+                    className="p-2 rounded-full w-40 h-10 bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center transition-colors"
                   >
+                    <p
+                      className={`text-lg pr-2 font-medium  ${" text-white transition-colors"}`}
+                    >
+                      Clear queue
+                    </p>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-5 w-5"

@@ -64,7 +64,7 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-gray-900 py-4 px-8 position: sticky">
+    <header className="bg-gray-900 pt-4 px-8 position: sticky">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <div className="w-14 h-14 mr-4 relative">
@@ -87,7 +87,7 @@ const Header = () => {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-purple-300">
-              XIV - update to DT
+              XIV - DT updater
             </h1>
             <p className="text-gray-400 text-sm">Dont we all love dawntrail?</p>
           </div>
