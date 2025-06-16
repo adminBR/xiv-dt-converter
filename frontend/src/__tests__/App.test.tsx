@@ -5,5 +5,5 @@ import "@testing-library/jest-dom";
 
 test("renders without crashing", () => {
   render(<App />);
-  expect(screen.getByText(/XIV DT Updater/i)).toBeInTheDocument();
+  expect(screen.getByText(/XIV - DT updater/i)).toBeInTheDocument();
 });
