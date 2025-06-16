@@ -65,21 +65,6 @@ const FileUploader = ({ onFilesSelected }: FileUploaderProps) => {
           accept=".ttmp,.ttmp2,.pmp"
         />
 
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-20 w-20 text-purple-400 mb-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-          />
-        </svg>
-
         <h2 className="text-2xl font-semibold text-purple-300 mb-2">
           {isDragging ? "Drop Your Mods Here" : "Drag & Drop Your Mods"}
         </h2>
@@ -87,8 +72,88 @@ const FileUploader = ({ onFilesSelected }: FileUploaderProps) => {
         <p className="text-sm text-gray-500">
           Supported formats: .ttmp, .ttmp2, .pmp
         </p>
-        <p className="text-sm text-gray-500">
-          This uses TexTools, so only clothing mods can be converted.
+        <p className="text-sm font-medium pt-2">
+          {(() => {
+            const text =
+              "This uses TexTools, so only clothing mods can be converted.";
+            const words = text.split(" ");
+            let globalCharIndex = 0;
+
+            return words.map((word, wordIndex) => (
+              <span
+                key={wordIndex}
+                style={{ paddingRight: "0.5rem", display: "inline-block" }}
+              >
+                {word.split("").map((char, charIndex) => {
+                  const delay = `${globalCharIndex * 0.001}s, ${
+                    globalCharIndex * 0.05
+                  }s`;
+                  globalCharIndex++;
+                  return (
+                    <span
+                      key={charIndex}
+                      className="rainbow-letter"
+                      style={{ animationDelay: delay }}
+                    >
+                      {char}
+                    </span>
+                  );
+                })}
+                {/* Account for space character visually if needed */}
+                <span
+                  className="rainbow-letter"
+                  style={{
+                    animationDelay: `${globalCharIndex * 0.001}s, ${
+                      globalCharIndex * 0.05
+                    }s`,
+                  }}
+                >
+                  {" "}
+                </span>
+              </span>
+            ));
+          })()}
+        </p>
+        <p className="text-sm/7 font-small pt-2">
+          {(() => {
+            const text = "[Can you see now mayo?]";
+            const words = text.split(" ");
+            let globalCharIndex = 0;
+
+            return words.map((word, wordIndex) => (
+              <span
+                key={wordIndex}
+                style={{ paddingRight: "0.5rem", display: "inline-block" }}
+              >
+                {word.split("").map((char, charIndex) => {
+                  const delay = `${globalCharIndex * 0.001}s, ${
+                    globalCharIndex * 0.05
+                  }s`;
+                  globalCharIndex++;
+                  return (
+                    <span
+                      key={charIndex}
+                      className="rainbow-letter"
+                      style={{ animationDelay: delay }}
+                    >
+                      {char}
+                    </span>
+                  );
+                })}
+                {/* Account for space character visually if needed */}
+                <span
+                  className="rainbow-letter"
+                  style={{
+                    animationDelay: `${globalCharIndex * 0.001}s, ${
+                      globalCharIndex * 0.05
+                    }s`,
+                  }}
+                >
+                  {" "}
+                </span>
+              </span>
+            ));
+          })()}
         </p>
       </div>
     </div>

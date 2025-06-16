@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@tailwind utilities;
 /* src/index.css */
 
 /* Custom scrollbar for a more themed look */
@@ -22,10 +23,13 @@
 
 /* Add some FFXIV inspired font styling */
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background-color: #1a202c;
-  background-image: 
-    radial-gradient(circle at 50% 50%, rgba(76, 29, 149, 0.1) 0%, transparent 80%),
+  background-image: radial-gradient(
+      circle at 50% 50%,
+      rgba(76, 29, 149, 0.1) 0%,
+      transparent 80%
+    ),
     linear-gradient(to bottom, #1a202c, #111827);
   background-attachment: fixed;
   background-size: cover;
@@ -33,7 +37,8 @@ body {
 
 /* Animation for processing mods */
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -43,4 +48,42 @@ body {
 
 .animate-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes rainbow-fade {
+  0% {
+    color: #ef4444;
+  } /* red */
+  25% {
+    color: #facc15;
+  } /* yellow */
+  50% {
+    color: #22c55e;
+  } /* green */
+  75% {
+    color: #3b82f6;
+  } /* blue */
+  100% {
+    color: #ec4899;
+  } /* pink */
+}
+
+@keyframes wave {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.2em);
+  }
+}
+
+.rainbow-letter {
+  display: inline-block;
+  position: relative;
+  animation: rainbow-fade 4s linear infinite, wave 1s ease-in-out infinite;
+  z-index: 10;
+}
+
+.z-9999 {
+  z-index: 9999 !important;
 }

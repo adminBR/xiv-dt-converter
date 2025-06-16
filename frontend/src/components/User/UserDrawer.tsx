@@ -111,7 +111,7 @@ const UserDrawer = ({ isOpen, onClose, username, token }: UserDrawerProps) => {
   return (
     <div className="fixed inset-0 z-40 overflow-hidden">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-gray-900/50" onClick={onClose}></div>
+      <div className="absolute inset-0 bg-black/60" onClick={onClose}></div>
 
       {/* Drawer */}
       <div className="absolute inset-y-0 right-0 w-full md:w-96 bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out overflow-y-auto">
