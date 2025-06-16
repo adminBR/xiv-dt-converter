@@ -10,6 +10,7 @@ export interface AuthContextType {
 export interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onRedirectClose: () => void;
   onSuccess: (token: string, username: string) => void;
 }
 

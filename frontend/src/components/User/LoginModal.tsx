@@ -2,7 +2,12 @@
 import { useState } from "react";
 import { AuthModalProps, FormErrors } from "../../interfaces/Auth";
 
-const LoginModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
+const LoginModal = ({
+  isOpen,
+  onClose,
+  onRedirectClose,
+  onSuccess,
+}: AuthModalProps) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
@@ -102,7 +107,7 @@ const LoginModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center">
       <div className="bg-gray-800 p-6 rounded-lg shadow-xl w-96 border border-purple-500">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-purple-300">login</h2>
@@ -229,19 +234,18 @@ const LoginModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
               <>login</>
             )}
           </button>
-
-          <div className="mt-4 text-center text-gray-400 text-sm">
-            <p>
-              Don't have an account?
-              <button
-                className="text-blue-500 hover:underline ml-1"
-                onClick={() => {}}
-              >
-                Register
-              </button>
-            </p>
-          </div>
         </form>
+        <div className="mt-4 text-center text-gray-400 text-sm">
+          <p>
+            Don't have an account?
+            <button
+              className="text-blue-500 hover:underline ml-1"
+              onClick={() => onRedirectClose()}
+            >
+              Register
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );

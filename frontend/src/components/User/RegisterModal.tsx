@@ -2,7 +2,12 @@
 import { useState } from "react";
 import { AuthModalProps, FormErrors } from "../../interfaces/Auth";
 
-const RegisterModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
+const RegisterModal = ({
+  isOpen,
+  onClose,
+  onRedirectClose,
+  onSuccess,
+}: AuthModalProps) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -266,19 +271,18 @@ const RegisterModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
               <>Register</>
             )}
           </button>
-
-          <div className="mt-4 text-center text-gray-400 text-sm">
-            <p>
-              Already have an account?
-              <button
-                className="text-blue-500 hover:underline ml-1"
-                onClick={() => {}}
-              >
-                Login
-              </button>
-            </p>
-          </div>
         </form>
+        <div className="mt-4 text-center text-gray-400 text-sm">
+          <p>
+            Already have an account?
+            <button
+              className="text-blue-500 hover:underline ml-1"
+              onClick={() => onRedirectClose()}
+            >
+              Login
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );

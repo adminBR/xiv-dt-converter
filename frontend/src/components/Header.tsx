@@ -64,7 +64,7 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-gray-900 pt-4 px-8 position: sticky">
+    <header className="bg-gray-900 pt-4 px-8 position: sticky  z-40">
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <div className="w-14 h-14 mr-4 relative">
@@ -168,12 +168,22 @@ const Header = () => {
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
+        onRedirectClose={() => {
+          setIsLoginModalOpen(false);
+          setIsRegisterModalOpen(true);
+        }}
         onSuccess={handleAuthSuccess}
       />
 
       <RegisterModal
         isOpen={isRegisterModalOpen}
-        onClose={() => setIsRegisterModalOpen(false)}
+        onClose={() => {
+          setIsRegisterModalOpen(false);
+        }}
+        onRedirectClose={() => {
+          setIsRegisterModalOpen(false);
+          setIsLoginModalOpen(true);
+        }}
         onSuccess={handleAuthSuccess}
       />
 
