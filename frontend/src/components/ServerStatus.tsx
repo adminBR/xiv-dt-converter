@@ -31,13 +31,6 @@ const ServerStatus: React.FC<ServerStatusProps> = ({ serverStatus }) => {
           </div>
         </div>
       </div>
-
-      {serverStatus.queue_size > 0 && (
-        <div className="mt-2 text-xs text-gray-400">
-          {serverStatus.queue_size} task
-          {serverStatus.queue_size !== 1 ? "s" : ""} waiting in server queue
-        </div>
-      )}
     </div>
   );
 };

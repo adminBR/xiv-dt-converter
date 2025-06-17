@@ -19,6 +19,8 @@ function AppContent() {
   const [isBatchProcessing, setIsBatchProcessing] = useState(false);
   const [serverStatus, setServerStatus] = useState<QueueStatus | null>(null);
 
+  let tastStatusInterval: NodeJS.Timeout | null = null;
+
   // Fetch server status every 30 seconds
   useEffect(() => {
     // Fetch immediately on mount
@@ -267,12 +269,13 @@ function AppContent() {
         prev.map((m) => (m.id === id ? { ...m, taskId: task_id } : m))
       );
 
-      const pollInterval = setInterval(async () => {
+      tastStatusInterval = setInterval(async () => {
         const isDone = await pollTaskStatus(task_id, id);
         if (isDone) {
-          clearInterval(pollInterval);
+          clearInterval(tastStatusInterval!);
           setIsConverting(false);
           setCurrentlyConverting(null);
+          setIsBatchProcessing(false);
         }
       }, 3000);
     } catch (error) {
@@ -309,16 +312,11 @@ function AppContent() {
   };
 
   const cancelConversion = () => {
-    if (!isConverting && !isBatchProcessing) return;
+    console.log(isBatchProcessing);
+    if (!isBatchProcessing) return;
 
-    // If a file is currently converting, mark it as queued again
-    if (currentlyConverting) {
-      updateModStatus(currentlyConverting, "queued");
-    }
-
-    setIsConverting(false);
+    clearInterval(tastStatusInterval!);
     setIsBatchProcessing(false);
-    setCurrentlyConverting(null);
   };
 
   const clearCompletedMods = () => {
@@ -432,7 +430,7 @@ function AppContent() {
                         : " text-white transition-colors"
                     }`}
                   >
-                    Convert all
+                    {stats.queued < 2 ? "Convert one" : "Convert all"}
                   </p>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -457,34 +455,50 @@ function AppContent() {
                 </button>
 
                 {/* Cancel Button */}
-                {(isConverting || isBatchProcessing) && (
-                  <button
-                    onClick={cancelConversion}
-                    title={isConverting ? "Cancel conversion" : "Stop queue"}
-                    className="p-2 rounded-full w-10 h-10 bg-purple-700 hover:bg-purple-800 text-white flex items-center justify-center transition-colors"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
+                {stats.queued + stats.converting + stats.uploading > 1 &&
+                  isConverting &&
+                  isBatchProcessing && (
+                    <button
+                      onClick={cancelConversion}
+                      title={"Cancel conversion"}
+                      className={`${
+                        stats.queued + stats.converting + stats.uploading < 2 ||
+                        !isBatchProcessing
+                          ? "cursor-not-allowed"
+                          : "hover:bg-red-950"
+                      } p-2 rounded-full w-30 h-10 bg-red-900 text-gray-200 flex items-center justify-center transition-colors`}
+                      disabled={
+                        stats.queued + stats.converting + stats.uploading < 2 ||
+                        !isBatchProcessing
+                      }
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1-1v-4z"
-                      />
-                    </svg>
-                  </button>
-                )}
+                      <p
+                        className={`text-lg pr-2 font-medium  ${" text-gray-200 transition-colors"}`}
+                      >
+                        {"Cancel"}
+                      </p>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1-1v-4z"
+                        />
+                      </svg>
+                    </button>
+                  )}
 
                 {/* Clear Completed Button */}
                 {stats.completed > 0 && (
@@ -548,11 +562,14 @@ function AppContent() {
               </div>
             </div>
 
-            {isBatchProcessing && (
+            {isConverting && (
               <div className="mt-4 p-3 bg-indigo-900 bg-opacity-40 rounded-lg border border-indigo-700 flex items-center">
                 <div className="w-4 h-4 border-2 border-indigo-300 border-t-transparent rounded-full animate-spin mr-3"></div>
                 <span className="text-indigo-300">
-                  Processing queue... {stats.queued} mods remaining
+                  Processing queue... {isBatchProcessing ? stats.queued + 1 : 1}{" "}
+                  mod
+                  {isBatchProcessing ? (stats.queued + 1 > 1 ? "s" : "") : ""}{" "}
+                  remaining
                 </span>
               </div>
             )}
