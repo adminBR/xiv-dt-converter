@@ -7,6 +7,7 @@ import Header from "./components/Header";
 import ServerStatus from "./components/ServerStatus";
 import { AuthProvider, useAuth } from "./components/User/AuthContext";
 import { QueueStatus, TaskStatus, ModFile } from "./interfaces/App";
+import { ToastContainer, toast } from "react-toastify";
 
 function AppContent() {
   const { isAuthenticated, token } = useAuth();
@@ -199,6 +200,11 @@ function AppContent() {
           return true;
         }
       }
+      toast.error(CustomErrorToast(file.name), {
+        position: "bottom-right",
+        theme: "dark",
+        closeOnClick: true,
+      });
       return false; // Return undefined if there's no extension.
     });
 
@@ -337,10 +343,63 @@ function AppContent() {
 
   const stats = getQueueStats();
 
+  function CustomErrorToast(filename: string) {
+    return (
+      <div>
+        <p className="text-md font-bold text-gray-500">
+          Invalid file extension on file:
+        </p>
+        <p className="text-sm font-medium pt-2">
+          {(() => {
+            const text = filename;
+            const words = text.split(" ");
+            let globalCharIndex = 0;
+
+            return words.map((word, wordIndex) => (
+              <span
+                key={wordIndex}
+                style={{ paddingRight: "0.5rem", display: "inline-block" }}
+              >
+                {word.split("").map((char, charIndex) => {
+                  const delay = `${globalCharIndex * 0.001}s, ${
+                    globalCharIndex * 0.05
+                  }s`;
+                  globalCharIndex++;
+                  return (
+                    <span
+                      key={charIndex}
+                      className="rainbow-letter"
+                      style={{ animationDelay: delay }}
+                    >
+                      {char}
+                    </span>
+                  );
+                })}
+                {/* Account for space character visually if needed */}
+                <span
+                  className="rainbow-letter"
+                  style={{
+                    animationDelay: `${globalCharIndex * 0.001}s, ${
+                      globalCharIndex * 0.05
+                    }s`,
+                  }}
+                >
+                  {" "}
+                </span>
+              </span>
+            ));
+          })()}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-900 text-white">
       <Header />
-
+      {
+        //<button onClick={notify}>notify</button>
+      }
       <main className="flex-grow flex flex-col md:flex-row py-6 px-4 md:px-8 gap-6">
         <div className="w-full md:w-1/2 flex flex-col">
           <FileUploader onFilesSelected={handleFilesAdded} />
@@ -540,6 +599,7 @@ function AppContent() {
       </main>
 
       <Footer />
+      <ToastContainer />
     </div>
   );
 }
