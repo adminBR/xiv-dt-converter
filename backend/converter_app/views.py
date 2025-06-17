@@ -204,8 +204,8 @@ class TaskQueue:
                     os.makedirs(os.path.dirname(task.output_path), exist_ok=True)
                     
                     # Check if ConsoleTools.exe exists
-                    tools_path = 'C:\\Program Files\\FFXIV TexTools\\FFXIV_TexTools\\ConsoleTools.exe'
-                    #tools_path = 'C:\\Users\\Administrator\\Downloads\\FFXIV_TexTools_v3.0.9.5\\ConsoleTools.exe'
+                    #tools_path = 'C:\\Program Files\\FFXIV TexTools\\FFXIV_TexTools\\ConsoleTools.exe'
+                    tools_path = 'C:\\Users\\Administrator\\Downloads\\FFXIV_TexTools_v3.0.9.5\\ConsoleTools.exe'
 
                     if not os.path.exists(tools_path):
                         logging.error(f"ConsoleTools.exe not found at: {tools_path}")
