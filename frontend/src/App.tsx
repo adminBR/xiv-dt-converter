@@ -189,7 +189,20 @@ function AppContent() {
   }
 
   const handleFilesAdded = (files: File[]) => {
-    const newModFiles = files.map((file) => ({
+    const filteredFiles = Array.from(files).filter((file) => {
+      const parts = file.name.split(".");
+      if (parts.length > 1) {
+        const extension = parts.pop()?.toLowerCase();
+        const validExtensions = ["ttmp", "ttmp2", "pmp"];
+        console.log("ext", extension);
+        if (extension && validExtensions.includes(extension)) {
+          return true;
+        }
+      }
+      return false; // Return undefined if there's no extension.
+    });
+
+    const newModFiles = filteredFiles.map((file) => ({
       id: Math.random().toString(36).substring(2, 11),
       file,
       status: "queued" as const,
