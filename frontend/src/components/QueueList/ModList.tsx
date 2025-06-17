@@ -311,7 +311,11 @@ const ModList = ({
               {mod.status === "error" && (
                 <div className="flex items-center text-red-300 text-sm">
                   <span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
-                  Error: {mod.errorMessage || "Failed to convert"}
+                  Error:{" "}
+                  {mod.errorMessage ==
+                  "Conversion process did not create output file"
+                    ? "Textools Can't convert this mod"
+                    : mod.errorMessage || "Failed to convert"}
                 </div>
               )}
             </div>
